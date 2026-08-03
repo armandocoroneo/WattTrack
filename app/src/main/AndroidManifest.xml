@@ -3,8 +3,7 @@
 
     <application
         android:allowBackup="true"
-        android:label="WattTrack"
-        android:theme="@android:style/Theme.Material3.DayNight.NoActionBar">
+        android:label="WattTrack">
         
         <activity
             android:name=".MainActivity"
