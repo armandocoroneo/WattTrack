@@ -1,181 +1,117 @@
-// MainActivity.kt
-package com.watttrack.app
+package com.tuusuario.watttrack
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.watttrack.app.ui.screens.BalanceScreen
-import com.watttrack.app.ui.screens.HistoryScreen
-import com.watttrack.app.ui.screens.HomeScreen
-import com.watttrack.app.ui.screens.QuickReadScreen
-import com.watttrack.app.ui.screens.SettingsScreen
-import com.watttrack.app.viewmodel.WattTrackViewModel
-
-sealed class Screen(val route: String, val title: String, val icon: String) {
-    object Home : Screen("home", "Inicio", "🏠")
-    object QuickRead : Screen("quickRead", "Lectura", "⚡")
-    object Settings : Screen("settings", "Ajustes", "⚙️")
-    object History : Screen("history", "Historial", "📊")
-    object Balance : Screen("balance", "Balance", "⚖️")
-}
+import com.tuusuario.watttrack.data.AppDatabase
+import com.tuusuario.watttrack.data.WattTrackRepository
+import com.tuusuario.watttrack.ui.screens.HomeScreen
+import com.tuusuario.watttrack.ui.screens.QuickReadScreen
+import com.tuusuario.watttrack.ui.screens.SettingsScreen
+import com.tuusuario.watttrack.viewmodel.WattTrackViewModel
+import com.tuusuario.watttrack.viewmodel.WattTrackViewModelFactory
 
 class MainActivity : ComponentActivity() {
-
-    private val viewModel: WattTrackViewModel by viewModels()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val database = AppDatabase.getDatabase(applicationContext)
+        val repository = WattTrackRepository(database.meterDao())
+        val viewModelFactory = WattTrackViewModelFactory(repository)
+        val viewModel = ViewModelProvider(this, viewModelFactory)[WattTrackViewModel::class.java]
+
         setContent {
-            val fondoOscuro = Color(0xFF0A0A0F)
-            val acentoAmbar = Color(0xFFF59E0B)
-            val superficieOscura = Color(0xFF111118)
-
-            val wattTrackColorScheme = darkColorScheme(
-                primary = acentoAmbar,
-                background = fondoOscuro,
-                surface = superficieOscura,
-                onPrimary = fondoOscuro,
-                onBackground = Color.White,
-                onSurface = Color.White
-            )
-
-            MaterialTheme(
-                colorScheme = wattTrackColorScheme
-            ) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    MainAppScaffold(viewModel = viewModel)
-                }
-            }
+            WattTrackApp(viewModel)
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainAppScaffold(viewModel: WattTrackViewModel) {
+fun WattTrackApp(viewModel: WattTrackViewModel) {
     val navController = rememberNavController()
-    val items = listOf(Screen.Home, Screen.QuickRead, Screen.Settings)
-
-    Scaffold(
-        bottomBar = {
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
-            val currentRoute = navBackStackEntry?.destination?.route
-            
-            val mostrarBottomBar = currentRoute in items.map { it.route }
-
-            if (mostrarBottomBar) {
+    
+    val items = listOf(
+        Screen.Home,
+        Screen.QuickRead,
+        Screen.Settings
+    )
+    
+    MaterialTheme(
+        colorScheme = darkColorScheme(
+            primary = androidx.compose.ui.graphics.Color(0xFFF59E0B),
+            onPrimary = androidx.compose.ui.graphics.Color(0xFF000000),
+            background = androidx.compose.ui.graphics.Color(0xFF0A0A0F),
+            surface = androidx.compose.ui.graphics.Color(0xFF111118),
+            onBackground = androidx.compose.ui.graphics.Color(0xFFE8E8E8),
+            onSurface = androidx.compose.ui.graphics.Color(0xFFE8E8E8)
+        )
+    ) {
+        Scaffold(
+            bottomBar = {
                 NavigationBar(
-                    containerColor = Color(0xFF0A0A0F),
-                    tonalElevation = 0.dp
+                    containerColor = androidx.compose.ui.graphics.Color(0xFF0A0A0F)
                 ) {
+                    val navBackStackEntry by navController.currentBackStackEntryAsState()
+                    val currentDestination = navBackStackEntry?.destination
+                    
                     items.forEach { screen ->
-                        val esSeleccionado = currentRoute == screen.route
                         NavigationBarItem(
-                            selected = esSeleccionado,
+                            icon = { Icon(screen.icon, contentDescription = screen.label) },
+                            label = { Text(screen.label) },
+                            selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                             onClick = {
-                                if (currentRoute != screen.route) {
-                                    navController.navigate(screen.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
+                                navController.navigate(screen.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
                                     }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
                             },
-                            label = { 
-                                Text(
-                                    text = screen.title, 
-                                    color = if (esSeleccionado) Color(0xFFF59E0B) else Color.White,
-                                    fontSize = 12.sp,
-                                    fontWeight = if (esSeleccionado) FontWeight.Bold else FontWeight.Normal
-                                ) 
-                            },
-                            icon = { 
-                                Text(text = screen.icon, fontSize = 20.sp)
-                            },
                             colors = NavigationBarItemDefaults.colors(
-                                indicatorColor = Color(0xFFF59E0B).copy(alpha = 0.15f)
+                                selectedIconColor = androidx.compose.ui.graphics.Color(0xFFF59E0B),
+                                selectedTextColor = androidx.compose.ui.graphics.Color(0xFFF59E0B),
+                                unselectedIconColor = androidx.compose.ui.graphics.Color(0xFF666666),
+                                unselectedTextColor = androidx.compose.ui.graphics.Color(0xFF666666),
+                                indicatorColor = androidx.compose.ui.graphics.Color(0xFF1A1A24)
                             )
                         )
                     }
                 }
             }
-        }
-    ) { paddingValues ->
-        NavHost(
-            navController = navController,
-            startDestination = Screen.Home.route,
-            modifier = Modifier.padding(paddingValues)
-        ) {
-            composable(Screen.Home.route) {
-                HomeScreen(
-                    viewModel = viewModel,
-                    onAgregarMedidorClick = { navController.navigate(Screen.Settings.route) },
-                    onMedidorClick = { meterId ->
-                        viewModel.seleccionarMedidor(meterId)
-                        navController.navigate(Screen.History.route)
-                    },
-                    onNavegarLecturaRapida = { navController.navigate(Screen.QuickRead.route) },
-                    onNavegarAjustes = { navController.navigate(Screen.Settings.route) }
-                )
-            }
-            composable(Screen.QuickRead.route) {
-                QuickReadScreen(
-                    viewModel = viewModel,
-                    onGuardarExitoso = {
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Home.route) { inclusive = true }
-                        }
-                    }
-                )
-            }
-            composable(Screen.Settings.route) {
-                SettingsScreen(
-                    viewModel = viewModel,
-                    onVolver = { navController.navigateUp() }
-                )
-            }
-            composable(Screen.History.route) {
-                HistoryScreen(
-                    viewModel = viewModel,
-                    onVolver = { navController.navigateUp() }
-                )
-            }
-            composable(Screen.Balance.route) {
-                BalanceScreen(
-                    viewModel = viewModel,
-                    onNavegarAjustes = { navController.navigate(Screen.Settings.route) },
-                    onVolver = { navController.navigateUp() }
-                )
+        ) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = Screen.Home.route,
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable(Screen.Home.route) { HomeScreen(viewModel) }
+                composable(Screen.QuickRead.route) { QuickReadScreen(viewModel) }
+                composable(Screen.Settings.route) { SettingsScreen(viewModel) }
             }
         }
     }
+}
+
+sealed class Screen(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    object Home : Screen("home", "Inicio", Icons.Filled.Home)
+    object QuickRead : Screen("quickread", "Lectura", Icons.Filled.Edit)
+    object Settings : Screen("settings", "Ajustes", Icons.Filled.Settings)
 }
