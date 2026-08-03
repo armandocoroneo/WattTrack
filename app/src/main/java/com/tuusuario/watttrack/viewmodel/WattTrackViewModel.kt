@@ -59,6 +59,7 @@ class WattTrackViewModel(private val repository: WattTrackRepository) : ViewMode
             val cost = consumption * price
 
             val reading = Reading(
+                id = UUID.randomUUID().toString(),
                 meterId = meterId,
                 valueKwh = valueKwh,
                 previousKwh = previousKwh,
@@ -82,37 +83,6 @@ class WattTrackViewModel(private val repository: WattTrackRepository) : ViewMode
         }
     }
 
-    private suspend fun addSampleData() {
-        repository.insertMeter(Meter("main", "Casa Principal", "MAIN", null, "#F59E0B", "🏠"))
-        repository.insertMeter(Meter("local", "Local Comercial", "SUB", "main", "#3B82F6", "🏪"))
-        repository.insertMeter(Meter("depa", "Depa 3B", "SUB", "main", "#EC4899", "🏢"))
-
-        val now = System.currentTimeMillis()
-
-        repository.insertReading(Reading(
-            meterId = "main", timestamp = now, valueKwh = 12580, previousKwh = 12450,
-            consumption = 130, tariff = "Pico", pricePerKwh = 0.18f, costTotal = 23.40f,
-            note = "Lectura inicial", inputMethod = "MANUAL", photoPath = null
-        ))
-        repository.insertReading(Reading(
-            meterId = "local", timestamp = now, valueKwh = 8930, previousKwh = 8810,
-            consumption = 120, tariff = "Pico", pricePerKwh = 0.18f, costTotal = 21.60f,
-            note = null, inputMethod = "MANUAL", photoPath = null
-        ))
-        repository.insertReading(Reading(
-            meterId = "depa", timestamp = now, valueKwh = 5620, previousKwh = 5550,
-            consumption = 70, tariff = "Punta", pricePerKwh = 0.18f, costTotal = 12.60f,
-            note = null, inputMethod = "MANUAL", photoPath = null
-        ))
-    }
-}
-
-class WattTrackViewModelFactory(private val repository: WattTrackRepository) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(WattTrackViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return WattTrackViewModel(repository) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}
+    fun addSampleData() {
+        viewModelScope.launch {
+            repository.insertMeter(Meter(id = "main", name = "Casa Principal", type = "MAIN", parentId = null, colorHex = "#F59E0B", icon =
