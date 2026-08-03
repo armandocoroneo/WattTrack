@@ -20,7 +20,7 @@ interface MeterDao {
     suspend fun getLastReading(meterId: String): Reading?
 
     @Query("SELECT * FROM readings WHERE meterId = :meterId AND timestamp BETWEEN :start AND :end ORDER BY timestamp ASC")
-    suspend fun getReadingsInRange(meterId: String, start: Long, end: Long): List<Reading>
+    suspend fun getReadingsBetween(meterId: String, start: Long, end: Long): List<Reading>
 
     @Update
     suspend fun updateReading(reading: Reading)
