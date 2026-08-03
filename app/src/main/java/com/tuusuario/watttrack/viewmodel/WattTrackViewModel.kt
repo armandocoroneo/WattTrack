@@ -21,11 +21,14 @@ class WattTrackViewModel(private val repository: WattTrackRepository) : ViewMode
 
     init {
         viewModelScope.launch {
+            if (repository.getAllMeters().isEmpty()) {
+                addSampleData()
+            }
             loadMeters()
         }
     }
 
-    suspend fun loadMeters() {
+    private suspend fun loadMeters() {
         val list = repository.getAllMeters()
         _meters.value = list
         if (list.isNotEmpty() && _selectedMeter.value == null) {
@@ -34,15 +37,13 @@ class WattTrackViewModel(private val repository: WattTrackRepository) : ViewMode
         }
     }
 
-    suspend fun loadReadings(meterId: String) {
+    private suspend fun loadReadings(meterId: String) {
         _readings.value = repository.getReadingsForMeter(meterId)
     }
 
     fun selectMeter(meter: Meter) {
         _selectedMeter.value = meter
-        viewModelScope.launch {
-            loadReadings(meter.id)
-        }
+        viewModelScope.launch { loadReadings(meter.id) }
     }
 
     fun addReading(valueKwh: Int, meterId: String, note: String?, tariff: String = "Punta") {
@@ -81,34 +82,28 @@ class WattTrackViewModel(private val repository: WattTrackRepository) : ViewMode
         }
     }
 
-    fun addSampleData() {
-        viewModelScope.launch {
-            if (repository.getAllMeters().isEmpty()) {
-                repository.insertMeter(Meter("main", "Casa Principal", "MAIN", null, "#F59E0B", "🏠"))
-                repository.insertMeter(Meter("local", "Local Comercial", "SUB", "main", "#3B82F6", "🏪"))
-                repository.insertMeter(Meter("depa", "Depa 3B", "SUB", "main", "#EC4899", "🏢"))
+    private suspend fun addSampleData() {
+        repository.insertMeter(Meter("main", "Casa Principal", "MAIN", null, "#F59E0B", "🏠"))
+        repository.insertMeter(Meter("local", "Local Comercial", "SUB", "main", "#3B82F6", "🏪"))
+        repository.insertMeter(Meter("depa", "Depa 3B", "SUB", "main", "#EC4899", "🏢"))
 
-                val now = System.currentTimeMillis()
+        val now = System.currentTimeMillis()
 
-                repository.insertReading(Reading(
-                    meterId = "main", timestamp = now, valueKwh = 12580, previousKwh = 12450,
-                    consumption = 130, tariff = "Pico", pricePerKwh = 0.18f, costTotal = 23.40f,
-                    note = "Lectura inicial", inputMethod = "MANUAL", photoPath = null
-                ))
-                repository.insertReading(Reading(
-                    meterId = "local", timestamp = now, valueKwh = 8930, previousKwh = 8810,
-                    consumption = 120, tariff = "Pico", pricePerKwh = 0.18f, costTotal = 21.60f,
-                    note = null, inputMethod = "MANUAL", photoPath = null
-                ))
-                repository.insertReading(Reading(
-                    meterId = "depa", timestamp = now, valueKwh = 5620, previousKwh = 5550,
-                    consumption = 70, tariff = "Punta", pricePerKwh = 0.18f, costTotal = 12.60f,
-                    note = null, inputMethod = "MANUAL", photoPath = null
-                ))
-
-                loadMeters()
-            }
-        }
+        repository.insertReading(Reading(
+            meterId = "main", timestamp = now, valueKwh = 12580, previousKwh = 12450,
+            consumption = 130, tariff = "Pico", pricePerKwh = 0.18f, costTotal = 23.40f,
+            note = "Lectura inicial", inputMethod = "MANUAL", photoPath = null
+        ))
+        repository.insertReading(Reading(
+            meterId = "local", timestamp = now, valueKwh = 8930, previousKwh = 8810,
+            consumption = 120, tariff = "Pico", pricePerKwh = 0.18f, costTotal = 21.60f,
+            note = null, inputMethod = "MANUAL", photoPath = null
+        ))
+        repository.insertReading(Reading(
+            meterId = "depa", timestamp = now, valueKwh = 5620, previousKwh = 5550,
+            consumption = 70, tariff = "Punta", pricePerKwh = 0.18f, costTotal = 12.60f,
+            note = null, inputMethod = "MANUAL", photoPath = null
+        ))
     }
 }
 
