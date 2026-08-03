@@ -22,12 +22,6 @@ fun HomeScreen(viewModel: WattTrackViewModel) {
     val meters by viewModel.meters.collectAsState()
     val selected by viewModel.selectedMeter.collectAsState()
 
-    LaunchedEffect(Unit) {
-        if (meters.isEmpty()) {
-            viewModel.addSampleData()
-        }
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -49,7 +43,7 @@ fun HomeScreen(viewModel: WattTrackViewModel) {
 
         if (meters.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Cargando...", color = Color(0xFF666666))
+                Text("No hay medidores", color = Color(0xFF666666))
             }
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
