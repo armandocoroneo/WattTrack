@@ -58,7 +58,6 @@ class WattTrackViewModel(private val repository: WattTrackRepository) : ViewMode
             val cost = consumption * price
 
             val reading = Reading(
-                id = UUID.randomUUID().toString(),
                 meterId = meterId,
                 valueKwh = valueKwh,
                 previousKwh = previousKwh,
@@ -67,7 +66,8 @@ class WattTrackViewModel(private val repository: WattTrackRepository) : ViewMode
                 pricePerKwh = price,
                 costTotal = cost,
                 note = note,
-                inputMethod = "MANUAL"
+                inputMethod = "MANUAL",
+                photoPath = null
             )
             repository.insertReading(reading)
             loadReadings(meterId)
@@ -84,21 +84,28 @@ class WattTrackViewModel(private val repository: WattTrackRepository) : ViewMode
     fun addSampleData() {
         viewModelScope.launch {
             if (repository.getAllMeters().isEmpty()) {
-                val main = Meter("main", "Casa Principal", "MAIN", null, "#F59E0B", "🏠")
-                val local = Meter("local", "Local Comercial", "SUB", "main", "#3B82F6", "🏪")
-                val depa = Meter("depa", "Depa 3B", "SUB", "main", "#EC4899", "🏢")
-                
-                repository.insertMeter(main)
-                repository.insertMeter(local)
-                repository.insertMeter(depa)
+                repository.insertMeter(Meter("main", "Casa Principal", "MAIN", null, "#F59E0B", "🏠"))
+                repository.insertMeter(Meter("local", "Local Comercial", "SUB", "main", "#3B82F6", "🏪"))
+                repository.insertMeter(Meter("depa", "Depa 3B", "SUB", "main", "#EC4899", "🏢"))
 
                 val now = System.currentTimeMillis()
-                val day = 86400000L
-                
-                repository.insertReading(Reading(UUID.randomUUID().toString(), "main", now, 12580, 12450, 130, "Pico", 0.18f, 23.40f, "Lectura inicial", "MANUAL"))
-                repository.insertReading(Reading(UUID.randomUUID().toString(), "local", now, 8930, 8810, 120, "Pico", 0.18f, 21.60f, null, "MANUAL"))
-                repository.insertReading(Reading(UUID.randomUUID().toString(), "depa", now, 5620, 5550, 70, "Punta", 0.18f, 12.60f, null, "MANUAL"))
-                
+
+                repository.insertReading(Reading(
+                    meterId = "main", timestamp = now, valueKwh = 12580, previousKwh = 12450,
+                    consumption = 130, tariff = "Pico", pricePerKwh = 0.18f, costTotal = 23.40f,
+                    note = "Lectura inicial", inputMethod = "MANUAL", photoPath = null
+                ))
+                repository.insertReading(Reading(
+                    meterId = "local", timestamp = now, valueKwh = 8930, previousKwh = 8810,
+                    consumption = 120, tariff = "Pico", pricePerKwh = 0.18f, costTotal = 21.60f,
+                    note = null, inputMethod = "MANUAL", photoPath = null
+                ))
+                repository.insertReading(Reading(
+                    meterId = "depa", timestamp = now, valueKwh = 5620, previousKwh = 5550,
+                    consumption = 70, tariff = "Punta", pricePerKwh = 0.18f, costTotal = 12.60f,
+                    note = null, inputMethod = "MANUAL", photoPath = null
+                ))
+
                 loadMeters()
             }
         }
