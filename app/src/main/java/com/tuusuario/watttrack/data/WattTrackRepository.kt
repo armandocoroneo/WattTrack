@@ -6,7 +6,7 @@ class WattTrackRepository(private val meterDao: MeterDao) {
     suspend fun getAllMeters() = meterDao.getAllMeters()
     suspend fun getReadingsForMeter(meterId: String) = meterDao.getReadingsForMeter(meterId)
     suspend fun getLastReading(meterId: String) = meterDao.getLastReading(meterId)
+    suspend fun getReadingsBetween(meterId: String, start: Long, end: Long) = meterDao.getReadingsBetween(meterId, start, end)
     suspend fun deleteReading(reading: Reading) = meterDao.deleteReading(reading)
     suspend fun updateReading(reading: Reading) = meterDao.updateReading(reading)
-    suspend fun getReadingsInRange(meterId: String, start: Long, end: Long) = meterDao.getReadingsInRange(meterId, start, end)
 }
